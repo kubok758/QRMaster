@@ -5,14 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>QRM — QR-Master</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <style>
         :root {
-            --glass-bg: rgba(255, 255, 255, 0.15);
-            --glass-border: 1px solid rgba(255, 255, 255, 0.3);
-            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.3);
-            --blur-amount: blur(15px);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.4);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --blur-amount: blur(20px);
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --secondary-gradient: linear-gradient(135deg, #ff6b6b 0%, #556270 100%);
+            --secondary-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
             --text-color: #2d3436;
             --radius-xl: 24px;
             --radius-md: 16px;
@@ -20,10 +22,7 @@
 
         body {
             font-family: 'Montserrat', sans-serif;
-            background: linear-gradient(45deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%),
-                        radial-gradient(at 50% 0%, #845ec2 0%, transparent 50%),
-                        radial-gradient(at 5% 90%, #d65db1 0%, transparent 50%);
-            background-blend-mode: screen, normal, normal;
+            background: linear-gradient(45deg, #a18cd1 0%, #fbc2eb 100%);
             background-attachment: fixed;
             margin: 0;
             padding: 20px;
@@ -46,11 +45,12 @@
             border: var(--glass-border);
             overflow: hidden;
             padding: 5px;
+            position: relative;
         }
 
         .tabs {
             display: flex;
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.3);
             border-radius: var(--radius-md) var(--radius-md) 0 0;
             margin: 5px 5px 0 5px;
             overflow: hidden;
@@ -80,14 +80,15 @@
             display: none;
             flex-direction: column;
             gap: 20px;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.2);
             border-radius: 0 0 var(--radius-md) var(--radius-md);
             margin: 0 5px 5px 5px;
+            min-height: 400px; /* Фиксируем высоту, чтобы интерфейс не скакал */
         }
 
         .content.active {
             display: flex;
-            animation: fadeIn 0.5s ease;
+            animation: fadeIn 0.4s ease;
         }
 
         @keyframes fadeIn {
@@ -97,7 +98,7 @@
 
         label {
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 700;
             margin-bottom: 8px;
             display: block;
             color: #444;
@@ -106,7 +107,7 @@
         select, input[type="text"], input[type="url"] {
             width: 100%;
             padding: 16px;
-            background: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.6);
             border: var(--glass-border);
             border-radius: var(--radius-md);
             font-size: 16px;
@@ -117,7 +118,7 @@
         }
 
         select:focus, input:focus {
-            background: rgba(255, 255, 255, 0.7);
+            background: #fff;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
 
@@ -128,7 +129,7 @@
             color: white;
             border: none;
             border-radius: var(--radius-md);
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 700;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
@@ -136,19 +137,20 @@
         }
 
         button.btn:active {
-            transform: scale(0.98);
+            transform: scale(0.96);
         }
         
         button.btn-secondary {
-             background: var(--secondary-gradient);
-             box-shadow: 0 10px 20px -10px rgba(255, 107, 107, 0.5);
+             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+             opacity: 0.9;
         }
         
         button.btn-outline {
-            background: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.6);
             color: #333;
             border: 1px solid rgba(0,0,0,0.1);
             margin-top: 10px;
+            font-weight: 600;
         }
 
         #qrcode-container {
@@ -157,78 +159,80 @@
             align-items: center;
             gap: 15px;
             margin-top: 10px;
-            padding: 25px;
-            background: rgba(255, 255, 255, 0.5);
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.4);
             border-radius: var(--radius-xl);
             border: var(--glass-border);
         }
 
-        #qrcode canvas, #qrcode img {
+        #qrcode img, #qrcode canvas {
             max-width: 100%;
-            height: auto;
+            height: auto !important;
             border-radius: 8px;
             background: #fff;
             padding: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
+        /* === ИСПРАВЛЕНИЕ КАМЕРЫ === */
         #reader {
             width: 100%;
             border-radius: var(--radius-md);
             overflow: hidden;
-            box-shadow: var(--glass-shadow);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
             border: var(--glass-border);
             background: rgba(0,0,0,0.1);
-            min-height: 250px;
+            min-height: 280px; /* Высота окна сканера */
             position: relative;
         }
         
+        /* Этот стиль принудительно растягивает видео с камеры */
+        #reader video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            border-radius: var(--radius-md);
+        }
+
         #scan-result {
             margin-top: 5px;
             padding: 20px;
-            background: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(5px);
             border: var(--glass-border);
             border-radius: var(--radius-md);
             word-break: break-all;
             display: none;
-        }
-
-        .result-label {
-            font-weight: 700;
-            color: #764ba2;
-            margin-bottom: 10px;
-            display: block;
-        }
-        
-        .result-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
+            text-align: center;
         }
 
         .scan-options {
             display: flex;
             gap: 12px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
         
         .scan-btn-small {
             flex: 1;
-            padding: 14px;
-            background: rgba(255, 255, 255, 0.3);
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.5);
             border: var(--glass-border);
             border-radius: var(--radius-md);
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             transition: 0.3s;
             color: #555;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
         }
         
         .scan-btn-small.active-mode {
-            background: rgba(255, 255, 255, 0.9);
+            background: #fff;
             color: #764ba2;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
         }
         
         #camera-status {
@@ -236,8 +240,9 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: #555;
-            font-size: 14px;
+            color: #666;
+            font-size: 15px;
+            font-weight: 500;
             text-align: center;
             width: 90%;
             pointer-events: none;
@@ -245,8 +250,6 @@
         }
 
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
 
@@ -281,24 +284,24 @@
 
     <div id="scan-section" class="content">
         <div class="scan-options">
-            <button class="scan-btn-small" id="cam-btn" onclick="startCamera()">📸 Камера</button>
+            <button class="scan-btn-small" id="cam-btn" onclick="startCamera()">📷 Камера</button>
             <button class="scan-btn-small" id="file-btn" onclick="triggerFileSelect()">🖼️ Из галереи</button>
             <input type="file" id="qr-input-file" accept="image/*" style="display: none" onchange="scanFromFile(this)">
         </div>
 
         <div id="reader">
-            <div id="camera-status">Нажмите «Камера» для старта</div>
+            <div id="camera-status">Нажмите кнопку выше</div>
         </div>
         
         <div id="scan-result">
-            <span class="result-label">Результат сканирования:</span>
-            <div style="background: rgba(0,0,0,0.05); padding: 15px; border-radius: 10px;">
-                <span id="result-text" style="font-size: 18px; font-weight: 500;"></span>
+            <span style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px;">Результат</span>
+            <div style="margin-top:10px; margin-bottom: 20px;">
+                <span id="result-text" style="font-size: 18px; font-weight: 600; color: #333;"></span>
             </div>
             
-            <div class="result-actions">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <button class="btn btn-secondary" id="copy-btn" onclick="copyResult()" style="flex:1;">Копировать</button>
-                <a href="#" id="open-link-btn" class="btn" style="display:none; text-align:center; text-decoration:none; flex:1;">Открыть</a>
+                <a href="#" id="open-link-btn" class="btn" style="display:none; text-align:center; text-decoration:none; flex:1; background: #2ecc71;">Открыть</a>
             </div>
 
             <button class="btn btn-outline" onclick="resetScannerUI()">🔄 Сканировать другое</button>
@@ -315,6 +318,7 @@
         if (tabName === 'create') {
             document.querySelectorAll('.tab')[0].classList.add('active');
             document.getElementById('create-section').classList.add('active');
+            // Принудительно убиваем камеру при уходе
             stopScanner(true); 
         } else {
             document.querySelectorAll('.tab')[1].classList.add('active');
@@ -352,32 +356,36 @@
         qrcodeObj.clear();
         qrcodeObj.makeCode(text);
 
+        // Увеличили задержку до 800мс, чтобы телефон точно успел нарисовать картинку
         setTimeout(() => {
              document.getElementById("download-btn").style.display = "block";
-        }, 500);
+        }, 800);
     }
 
     function downloadQR() {
-        const canvas = qrContainer.querySelector('canvas');
-        const img = qrContainer.querySelector('img');
-        let url = "";
+        // Ищем картинку более надежным способом
+        setTimeout(() => {
+            const img = qrContainer.querySelector('img');
+            const canvas = qrContainer.querySelector('canvas');
+            let url = "";
 
-        if (canvas) {
-            url = canvas.toDataURL("image/png");
-        } else if (img && img.src) {
-            url = img.src;
-        }
+            if (img && img.src && img.src.startsWith('data:image')) {
+                url = img.src;
+            } else if (canvas) {
+                url = canvas.toDataURL("image/png");
+            }
 
-        if (url) {
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'QRM-QR-Master.png';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } else {
-            alert("QR-код еще формируется...");
-        }
+            if (url) {
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'QRM-Code.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                alert("QR-код еще создается. Нажмите кнопку через секунду.");
+            }
+        }, 200);
     }
 
     // === 3. Сканирование ===
@@ -385,7 +393,8 @@
 
     function initScanner() {
         if (!html5QrCode) {
-            html5QrCode = new Html5Qrcode("reader");
+            // verbose: false убирает лишние логи
+            html5QrCode = new Html5Qrcode("reader", { verbose: false });
         }
     }
 
@@ -398,19 +407,23 @@
 
     async function startCamera() {
         setActiveScanMode('camera');
-        // Прячем результат, если он был
         resetScannerUI(false); 
         document.getElementById('camera-status').innerText = "Запуск камеры...";
         
         initScanner();
 
         try {
+            // Сначала останавливаем всё что можно
             if (html5QrCode.isScanning) {
                 await html5QrCode.stop();
             }
-            try { await html5QrCode.clear(); } catch(e) {}
-
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+            
+            // Важные настройки для мобильных
+            const config = { 
+                fps: 10, 
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0 
+            };
             
             await html5QrCode.start(
                 { facingMode: "environment" }, 
@@ -421,9 +434,9 @@
             document.getElementById('camera-status').innerText = "";
             
         } catch (err) {
-            console.error(err);
+            console.error("Ошибка камеры:", err);
             document.getElementById('camera-status').innerText = "Ошибка доступа";
-            alert("Не удалось запустить камеру. Если вы в Telegram - откройте в браузере.");
+            alert("Камера недоступна. Убедитесь, что сайт открыт в браузере (Chrome/Safari), а не в приложении Telegram.");
             setActiveScanMode(null);
         }
     }
@@ -435,11 +448,10 @@
                     await html5QrCode.stop();
                 }
                 if (clearDom) {
-                    await html5QrCode.clear();
-                    document.getElementById('camera-status').innerText = "Нажмите «Камера» для старта";
+                    html5QrCode.clear();
                 }
             } catch (err) {
-                console.log("Stop warning: ", err);
+                // Игнорируем ошибки остановки, если сканер уже остановлен
             }
         }
         document.getElementById('cam-btn').classList.remove('active-mode');
@@ -454,7 +466,7 @@
         const openLinkBtn = document.getElementById('open-link-btn');
         const copyBtn = document.getElementById('copy-btn');
         
-        // Скрываем зону камеры/превью, показываем результат
+        // Скрываем зону превью
         document.getElementById('reader').style.display = "none"; 
         resultDiv.style.display = "block";
         
@@ -466,31 +478,28 @@
             openLinkBtn.style.display = "block";
             openLinkBtn.href = decodedText;
             openLinkBtn.target = "_blank";
-            copyBtn.style.flex = "1";
         } else {
             openLinkBtn.style.display = "none";
-            copyBtn.style.flex = "auto";
         }
     }
 
-    // Функция для сброса интерфейса (кнопка "Сканировать другое")
     function resetScannerUI(fullReset = true) {
         document.getElementById('scan-result').style.display = "none";
         document.getElementById('reader').style.display = "block";
         document.getElementById('result-text').innerText = "";
         
         if(fullReset) {
-            document.getElementById('camera-status').innerText = "Нажмите «Камера» или выберите фото";
+            document.getElementById('camera-status').innerText = "Выберите режим";
             setActiveScanMode(null);
-            // Если нужно сразу открыть выбор файла при сбросе, раскомментируйте:
-            // triggerFileSelect(); 
+            stopScanner(true); // Полный сброс
         }
     }
 
     function triggerFileSelect() {
+        // Останавливаем камеру перед открытием файла
         stopScanner(true).then(() => {
             setActiveScanMode('file');
-            resetScannerUI(false); // Прячем старый результат
+            resetScannerUI(false); 
             document.getElementById('camera-status').innerText = "Выбор файла...";
             document.getElementById('qr-input-file').click();
         });
@@ -499,7 +508,7 @@
     function scanFromFile(input) {
         if (input.files.length === 0) {
              setActiveScanMode(null);
-             document.getElementById('camera-status').innerText = "Файл не выбран";
+             document.getElementById('camera-status').innerText = "Отменено";
              return;
         }
         
@@ -512,9 +521,9 @@
             document.getElementById('camera-status').innerText = "";
         })
         .catch(err => {
-            alert("QR-код не найден. Попробуйте другое фото.");
+            alert("QR-код не найден на фото. Попробуйте обрезать лишний фон на картинке и загрузить снова.");
             setActiveScanMode(null);
-            document.getElementById('camera-status').innerText = "Ошибка чтения";
+            document.getElementById('camera-status').innerText = "Не найдено";
         });
         
         input.value = ''; 
