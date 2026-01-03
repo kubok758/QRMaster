@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>QR Мастер</title>
+    <title>QRM — QR-Master</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -173,6 +173,7 @@
             border: var(--glass-border);
             background: rgba(0,0,0,0.1);
             min-height: 250px;
+            position: relative;
         }
         
         #scan-result {
@@ -222,10 +223,23 @@
             color: #764ba2;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
+        
+        /* Сообщение о статусе камеры внутри окна */
+        #camera-status {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #555;
+            font-size: 14px;
+            text-align: center;
+            width: 90%;
+            pointer-events: none;
+        }
 
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
 
@@ -260,12 +274,14 @@
 
     <div id="scan-section" class="content">
         <div class="scan-options">
-            <button class="scan-btn-small active-mode" id="cam-btn" onclick="startCamera()">📸 Камера</button>
+            <button class="scan-btn-small" id="cam-btn" onclick="startCamera()">📸 Камера</button>
             <button class="scan-btn-small" id="file-btn" onclick="triggerFileSelect()">🖼️ Из галереи</button>
             <input type="file" id="qr-input-file" accept="image/*" style="display: none" onchange="scanFromFile(this)">
         </div>
 
-        <div id="reader"></div>
+        <div id="reader">
+            <div id="camera-status">Нажмите "Камера" для старта</div>
+        </div>
         
         <div id="scan-result">
             <span class="result-label">Результат сканирования:</span>
@@ -282,7 +298,7 @@
 </div>
 
 <script>
-    // === 1. Логика интерфейса ===
+    // === 1. Интерфейс ===
     function switchTab(tabName) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
@@ -310,7 +326,7 @@
         }
     }
 
-    // === 2. Логика Генерации и Скачивания QR ===
+    // === 2. Генерация QR ===
     const qrContainer = document.getElementById("qrcode");
     let qrcodeObj = new QRCode(qrContainer, { width: 300, height: 300, correctLevel : QRCode.CorrectLevel.H });
 
@@ -327,15 +343,12 @@
         qrcodeObj.clear();
         qrcodeObj.makeCode(text);
 
-        // Ждем отрисовки
         setTimeout(() => {
              document.getElementById("download-btn").style.display = "block";
         }, 300);
     }
 
-    // ИСПРАВЛЕННАЯ ФУНКЦИЯ СКАЧИВАНИЯ
     function downloadQR() {
-        // Ищем либо Canvas (который библиотека часто создает по умолчанию), либо картинку
         const canvas = qrContainer.querySelector('canvas');
         const img = qrContainer.querySelector('img');
         let url = "";
@@ -358,7 +371,7 @@
         }
     }
 
-    // === 3. Логика Сканирования ===
+    // === 3. Сканирование (ИСПРАВЛЕНО) ===
     let html5QrCode;
 
     function initScanner() {
@@ -374,8 +387,42 @@
         if(mode === 'file') document.getElementById('file-btn').classList.add('active-mode');
     }
 
+    // Главная функция запуска камеры с обработкой ошибок
+    async function startCamera() {
+        setActiveScanMode('camera');
+        document.getElementById('scan-result').style.display = "none";
+        document.getElementById('camera-status').innerText = "Запрос доступа к камере...";
+        
+        initScanner();
+
+        try {
+            // Если камера уже работает - остановим
+            if (html5QrCode.isScanning) {
+                await html5QrCode.stop();
+            }
+
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+            
+            // Запуск
+            await html5QrCode.start(
+                { facingMode: "environment" }, 
+                config, 
+                onScanSuccess
+            );
+            
+            // Если успешно запустилась, убираем текст статуса
+            document.getElementById('camera-status').innerText = "";
+            
+        } catch (err) {
+            console.error("Ошибка камеры:", err);
+            document.getElementById('camera-status').innerText = "Ошибка доступа";
+            alert("Не удалось запустить камеру.\n1. Убедитесь, что сайт открыт в браузере (Chrome/Safari), а НЕ внутри Telegram/VK.\n2. Разрешите доступ к камере.\nОшибка: " + err);
+            setActiveScanMode(null);
+        }
+    }
+
     function onScanSuccess(decodedText, decodedResult) {
-        stopScanner(); // Важно: остановить камеру при успехе
+        stopScanner();
         
         const resultDiv = document.getElementById('scan-result');
         const resultText = document.getElementById('result-text');
@@ -398,41 +445,20 @@
         }
     }
 
-    function startCamera() {
-        setActiveScanMode('camera');
-        initScanner();
-        document.getElementById('scan-result').style.display = "none";
-        
-        // Очищаем предыдущее состояние перед запуском камеры
-        html5QrCode.clear().then(() => {
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-            return html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
-        }).catch(err => {
-            // Если clear не нужен был, просто запускаем
-             const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-             html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
-             .catch(e => {
-                alert("Ошибка камеры. Убедитесь в HTTPS и правах доступа.");
-             });
-        });
-    }
-
     function stopScanner() {
         if (html5QrCode && html5QrCode.isScanning) {
-            html5QrCode.stop().catch(err => console.log(err));
+            html5QrCode.stop().then(() => {
+                document.getElementById('camera-status').innerText = "Камера остановлена";
+            }).catch(err => console.log(err));
         }
         document.getElementById('cam-btn').classList.remove('active-mode');
         document.getElementById('file-btn').classList.remove('active-mode');
     }
 
     function triggerFileSelect() {
-        // Сначала останавливаем всё, чтобы освободить сканер
-        if (html5QrCode) {
-            html5QrCode.clear().then(() => {
-                performFileSelect();
-            }).catch(() => {
-                performFileSelect(); // Даже если ошибка очистки, пробуем выбрать
-            });
+        // Остановка перед выбором файла (через async обертку не обязательно, но надежнее)
+        if (html5QrCode && html5QrCode.isScanning) {
+            html5QrCode.stop().then(performFileSelect).catch(performFileSelect);
         } else {
             performFileSelect();
         }
@@ -441,30 +467,32 @@
     function performFileSelect() {
         setActiveScanMode('file');
         document.getElementById('scan-result').style.display = "none";
+        document.getElementById('camera-status').innerText = "Выбор файла...";
         document.getElementById('qr-input-file').click();
     }
 
     function scanFromFile(input) {
         if (input.files.length === 0) {
              setActiveScanMode(null);
+             document.getElementById('camera-status').innerText = "Файл не выбран";
              return;
         }
         
         const imageFile = input.files[0];
-        initScanner(); // Убеждаемся, что объект создан
+        initScanner();
 
-        // Используем scanFileV2 или обычный scanFile, но с чистым состоянием
         html5QrCode.scanFile(imageFile, true)
         .then(decodedText => {
             onScanSuccess(decodedText);
+            document.getElementById('camera-status').innerText = "";
         })
         .catch(err => {
-            console.log(err);
-            alert("QR-код не найден на изображении. Попробуйте обрезать картинку так, чтобы QR был крупнее.");
+            alert("QR-код не найден на этом фото. Попробуйте обрезать лишнее.");
             setActiveScanMode(null);
+            document.getElementById('camera-status').innerText = "Ошибка чтения файла";
         });
         
-        input.value = ''; // Сброс
+        input.value = ''; 
     }
     
     function copyResult() {
