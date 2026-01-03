@@ -1,573 +1,329 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>QRM — QR-Master</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <style>
-        :root {
-            --glass-bg: rgba(255, 255, 255, 0.25);
-            --glass-border: 1px solid rgba(255, 255, 255, 0.4);
-            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-            --blur-amount: blur(20px);
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --text-color: #2d3436;
-            --radius-xl: 24px;
-            --radius-md: 16px;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>QRM — QR-Master</title>
 
-        body {
-            font-family: 'Montserrat', sans-serif;
-            background: linear-gradient(45deg, #a18cd1 0%, #fbc2eb 100%);
-            background-attachment: fixed;
-            margin: 0;
-            padding: 20px;
-            color: var(--text-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 
-        .container {
-            width: 100%;
-            max-width: 460px;
-            background: var(--glass-bg);
-            box-shadow: var(--glass-shadow);
-            backdrop-filter: var(--blur-amount);
-            -webkit-backdrop-filter: var(--blur-amount);
-            border-radius: var(--radius-xl);
-            border: var(--glass-border);
-            overflow: hidden;
-            padding: 5px;
-            position: relative;
-        }
+<style>
+/* === ОСНОВА === */
+:root {
+    --glass-bg: rgba(255,255,255,.25);
+    --glass-border: 1px solid rgba(255,255,255,.4);
+    --glass-shadow: 0 8px 32px rgba(31,38,135,.15);
+    --primary-gradient: linear-gradient(135deg,#667eea,#764ba2);
+    --radius-xl: 24px;
+    --radius-md: 16px;
+}
 
-        .tabs {
-            display: flex;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: var(--radius-md) var(--radius-md) 0 0;
-            margin: 5px 5px 0 5px;
-        }
+* { box-sizing: border-box; }
 
-        .tab {
-            flex: 1;
-            padding: 15px;
-            text-align: center;
-            cursor: pointer;
-            font-weight: 600;
-            color: #555;
-            transition: 0.3s;
-            background: transparent;
-            border: none;
-            font-size: 15px;
-        }
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Montserrat, sans-serif;
+    background: linear-gradient(45deg,#a18cd1,#fbc2eb);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
 
-        .tab.active {
-            color: #fff;
-            background: var(--primary-gradient);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-            border-radius: var(--radius-md) var(--radius-md) 0 0;
-        }
+.container {
+    width: 100%;
+    max-width: 460px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border-radius: var(--radius-xl);
+    border: var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    overflow: hidden;
+}
 
-        .content {
-            padding: 20px;
-            display: none;
-            flex-direction: column;
-            gap: 15px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 0 0 var(--radius-md) var(--radius-md);
-            margin: 0 5px 5px 5px;
-            min-height: 400px;
-        }
+/* === ТАБЫ === */
+.tabs {
+    display: flex;
+}
 
-        .content.active {
-            display: flex;
-            animation: fadeIn 0.4s ease;
-        }
+.tab {
+    flex: 1;
+    padding: 18px;
+    border: none;
+    background: transparent;
+    font-weight: 700;
+    cursor: pointer;
+}
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+.tab.active {
+    background: var(--primary-gradient);
+    color: #fff;
+}
 
-        label {
-            font-size: 14px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            display: block;
-            color: #444;
-        }
+/* === КОНТЕНТ === */
+.content {
+    display: none;
+    padding: 25px;
+    gap: 20px;
+    flex-direction: column;
+    min-height: 420px;
+}
 
-        select, input[type="text"] {
-            width: 100%;
-            padding: 14px;
-            background: rgba(255, 255, 255, 0.6);
-            border: var(--glass-border);
-            border-radius: var(--radius-md);
-            font-size: 16px;
-            box-sizing: border-box;
-            outline: none;
-            transition: 0.3s;
-            font-family: inherit;
-        }
+.content.active {
+    display: flex;
+}
 
-        select:focus, input:focus {
-            background: #fff;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-        }
+label {
+    font-weight: 700;
+    font-size: 14px;
+}
 
-        button.btn {
-            width: 100%;
-            padding: 14px;
-            background: var(--primary-gradient);
-            color: white;
-            border: none;
-            border-radius: var(--radius-md);
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-            margin-top: 10px;
-        }
+input, select {
+    width: 100%;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    border: var(--glass-border);
+    font-size: 16px;
+}
 
-        button.btn:active {
-            transform: scale(0.96);
-        }
-        
-        button.btn-secondary {
-             background: #764ba2;
-             opacity: 0.9;
-             margin-top: 0;
-        }
-        
-        button.btn-outline {
-            background: rgba(255, 255, 255, 0.6);
-            color: #333;
-            border: 1px solid rgba(0,0,0,0.1);
-            font-weight: 600;
-            box-shadow: none;
-        }
+button.btn {
+    padding: 16px;
+    font-size: 18px;
+    font-weight: 700;
+    border-radius: var(--radius-md);
+    border: none;
+    cursor: pointer;
+    background: var(--primary-gradient);
+    color: #fff;
+}
 
-        #qrcode-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            margin-top: 10px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.5);
-            border-radius: var(--radius-xl);
-            border: var(--glass-border);
-        }
+button.btn-outline {
+    background: rgba(255,255,255,.7);
+    color: #333;
+    border: 1px solid rgba(0,0,0,.1);
+}
 
-        /* Стиль для самого QR кода */
-        #qrcode img, #qrcode canvas {
-            display: block;
-            max-width: 100%;
-            height: auto !important;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
+/* === QR === */
+#qrcode-container {
+    display: none;
+    align-items: center;
+    flex-direction: column;
+    gap: 15px;
+}
 
-        /* === СКАНЕР === */
-        #reader {
-            width: 100%;
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            border: var(--glass-border);
-            background: rgba(0,0,0,0.1);
-            position: relative;
-            min-height: 250px;
-        }
-        
-        #reader video {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: cover !important; /* Важно: заполняет блок видео */
-            border-radius: var(--radius-md);
-        }
+#qrcode img, #qrcode canvas {
+    background: #fff;
+    padding: 10px;
+    border-radius: 10px;
+}
 
-        #scan-result {
-            margin-top: 5px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            border-radius: var(--radius-md);
-            word-break: break-all;
-            display: none;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
+/* === СКАНЕР === */
+#reader {
+    width: 100%;
+    min-height: 280px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    position: relative;
+}
 
-        .scan-options {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        
-        .scan-btn-small {
-            flex: 1;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.5);
-            border: var(--glass-border);
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.3s;
-            color: #444;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 14px;
-        }
-        
-        .scan-btn-small.active-mode {
-            background: #fff;
-            color: #764ba2;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            border-color: #fff;
-        }
-        
-        #camera-status {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #555;
-            font-size: 14px;
-            text-align: center;
-            width: 90%;
-            pointer-events: none;
-            z-index: 10;
-        }
+#reader video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+}
 
-        .btn-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-    </style>
+#camera-status {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: #666;
+}
+
+.scan-options {
+    display: flex;
+    gap: 10px;
+}
+
+.scan-btn-small {
+    flex: 1;
+    padding: 14px;
+    border-radius: var(--radius-md);
+    border: var(--glass-border);
+    background: rgba(255,255,255,.6);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.scan-btn-small.active-mode {
+    background: #fff;
+    color: #764ba2;
+}
+
+/* === РЕЗУЛЬТАТ === */
+#scan-result {
+    display: none;
+    text-align: center;
+    gap: 15px;
+    flex-direction: column;
+}
+</style>
 </head>
+
 <body>
 
 <div class="container">
-    <div class="tabs">
-        <button class="tab active" onclick="switchTab('create')">Создать QR</button>
-        <button class="tab" onclick="switchTab('scan')">Сканировать</button>
-    </div>
 
-    <div id="create-section" class="content active">
-        <div>
-            <label>Тип данных:</label>
-            <select id="qr-type" onchange="updatePlaceholder()">
-                <option value="text">Текст / Сообщение</option>
-                <option value="url">Ссылка на сайт</option>
-                <option value="wifi">Данные Wi-Fi</option>
-            </select>
-        </div>
+<div class="tabs">
+    <button class="tab active" onclick="switchTab('create')">Создать QR</button>
+    <button class="tab" onclick="switchTab('scan')">Сканировать</button>
+</div>
 
-        <div>
-            <label id="input-label">Введите содержание:</label>
-            <input type="text" id="qr-input" placeholder="Введите текст...">
-        </div>
+<!-- СОЗДАНИЕ -->
+<div id="create" class="content active">
+    <label>Тип данных</label>
+    <select id="qr-type" onchange="updatePlaceholder()">
+        <option value="text">Текст</option>
+        <option value="url">Ссылка</option>
+        <option value="wifi">Wi-Fi</option>
+    </select>
 
-        <button class="btn" onclick="generateQR()">✨ Создать код</button>
+    <label>Данные</label>
+    <input id="qr-input" placeholder="Введите текст">
 
-        <div id="qrcode-container" style="display:none;">
-            <div id="qrcode"></div>
-            <button class="btn btn-secondary" id="download-btn" onclick="downloadQR()">📥 Скачать изображение</button>
-        </div>
-    </div>
+    <button class="btn" onclick="generateQR()">Сгенерировать</button>
 
-    <div id="scan-section" class="content">
-        <div class="scan-options">
-            <button class="scan-btn-small" id="cam-btn" onclick="startCamera()">📷 Камера</button>
-            <button class="scan-btn-small" id="file-btn" onclick="triggerFileSelect()">🖼️ Из файла</button>
-            <input type="file" id="qr-input-file" accept="image/*" style="display: none" onchange="scanFromFile(this)">
-        </div>
-
-        <div id="reader">
-            <div id="camera-status">Выберите способ сканирования</div>
-        </div>
-        
-        <div id="scan-result">
-            <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Результат</div>
-            <div id="result-text" style="font-size: 16px; font-weight: 600; color: #333; margin-bottom: 15px; padding: 10px; background: rgba(0,0,0,0.03); border-radius: 8px;"></div>
-            
-            <div class="btn-group">
-                <button class="btn btn-secondary" onclick="copyResult()" style="flex:1; margin-top:0;">Копировать</button>
-                <a href="#" id="open-link-btn" class="btn" style="display:none; text-align:center; text-decoration:none; flex:1; background: #2ecc71; margin-top:0; line-height: 20px;">Открыть</a>
-            </div>
-
-            <button class="btn btn-outline" onclick="resetScannerUI(true)">🔄 Сканировать снова</button>
-        </div>
+    <div id="qrcode-container">
+        <div id="qrcode"></div>
+        <button class="btn" onclick="downloadQR()">Скачать</button>
     </div>
 </div>
 
+<!-- СКАНЕР -->
+<div id="scan" class="content">
+
+    <div class="scan-options">
+        <button id="cam-btn" class="scan-btn-small" onclick="startCamera()">📷 Камера</button>
+        <button id="file-btn" class="scan-btn-small" onclick="openFile()">🖼 Фото</button>
+        <input type="file" id="file-input" accept="image/*" hidden>
+    </div>
+
+    <div id="reader">
+        <div id="camera-status">Выберите режим</div>
+    </div>
+
+    <div id="scan-result">
+        <div id="result-text"></div>
+        <button class="btn" onclick="copyResult()">Копировать</button>
+        <a id="open-link" class="btn" target="_blank" style="display:none">Открыть</a>
+        <button class="btn-outline" onclick="resetScanner()">Сканировать ещё</button>
+    </div>
+</div>
+
+</div>
+
 <script>
-    // === 1. УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ ===
-    function switchTab(tabName) {
-        // Переключение кнопок
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-        
-        if (tabName === 'create') {
-            document.querySelectorAll('.tab')[0].classList.add('active');
-            document.getElementById('create-section').classList.add('active');
-            // Принудительно останавливаем сканер, чтобы освободить камеру
-            stopScannerSafe(); 
-        } else {
-            document.querySelectorAll('.tab')[1].classList.add('active');
-            document.getElementById('scan-section').classList.add('active');
-        }
+let qr = new QRCode(document.getElementById("qrcode"), { width: 300, height: 300 });
+let scanner = null;
+
+function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+
+    if (tab === 'create') {
+        document.querySelectorAll('.tab')[0].classList.add('active');
+        document.getElementById('create').classList.add('active');
+        stopCamera();
+    } else {
+        document.querySelectorAll('.tab')[1].classList.add('active');
+        document.getElementById('scan').classList.add('active');
     }
+}
 
-    function updatePlaceholder() {
-        const type = document.getElementById('qr-type').value;
-        const input = document.getElementById('qr-input');
-        
-        if (type === 'url') {
-            input.placeholder = "https://example.com";
-        } else if (type === 'wifi') {
-            input.placeholder = "WIFI:S:MyNetwork;T:WPA;P:password;;";
-        } else {
-            input.placeholder = "Введите текст";
-        }
+function updatePlaceholder() {
+    const t = document.getElementById('qr-type').value;
+    document.getElementById('qr-input').placeholder =
+        t === 'url' ? 'https://site.com' :
+        t === 'wifi' ? 'WIFI:S:Name;T:WPA;P:pass;;' :
+        'Введите текст';
+}
+
+function generateQR() {
+    const text = qrInput.value.trim();
+    if (!text) return alert('Введите данные');
+    qr.clear();
+    qr.makeCode(text);
+    qrcodeContainer.style.display = 'flex';
+}
+
+function downloadQR() {
+    const img = qrcode.querySelector('img') || qrcode.querySelector('canvas');
+    const url = img.src || img.toDataURL();
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'qr.png';
+    a.click();
+}
+
+/* === СКАНЕР === */
+
+function startCamera() {
+    resetScanner();
+    if (!scanner) scanner = new Html5Qrcode("reader");
+    scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        onScan
+    ).then(() => cameraStatus.textContent = '')
+     .catch(() => cameraStatus.textContent = 'Камера недоступна');
+}
+
+function stopCamera() {
+    if (scanner?.isScanning) scanner.stop();
+}
+
+function onScan(text) {
+    stopCamera();
+    reader.style.display = 'none';
+    scanResult.style.display = 'flex';
+    resultText.textContent = text;
+
+    if (/^https?:\/\//i.test(text)) {
+        openLink.href = text;
+        openLink.style.display = 'block';
+    } else {
+        openLink.style.display = 'none';
     }
+}
 
-    // === 2. ГЕНЕРАЦИЯ QR ===
-    // Объект QR кода не создаем сразу, будем создавать при клике
-    let qrcodeInstance = null;
+function resetScanner() {
+    scanResult.style.display = 'none';
+    reader.style.display = 'block';
+    resultText.textContent = '';
+    cameraStatus.textContent = 'Выберите режим';
+}
 
-    function generateQR() {
-        const text = document.getElementById("qr-input").value;
-        const container = document.getElementById("qrcode");
-        
-        if (!text.trim()) {
-            alert("Пожалуйста, введите данные!");
-            return;
-        }
+function openFile() {
+    fileInput.click();
+}
 
-        // Показываем блок
-        document.getElementById("qrcode-container").style.display = "flex";
-        
-        // Очищаем предыдущий код! Это критически важно.
-        container.innerHTML = ""; 
-        
-        // Создаем новый
-        qrcodeInstance = new QRCode(container, {
-            text: text,
-            width: 256,
-            height: 256,
-            colorDark : "#000000",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.H
-        });
-    }
+fileInput.onchange = () => {
+    if (!scanner) scanner = new Html5Qrcode("reader");
+    scanner.scanFile(fileInput.files[0], true)
+        .then(onScan)
+        .catch(() => alert('QR не найден'));
+};
 
-    function downloadQR() {
-        const container = document.getElementById("qrcode");
-        // Библиотека qrcodejs создает либо canvas, либо img. Ищем что есть.
-        const canvas = container.querySelector('canvas');
-        const img = container.querySelector('img');
-        
-        let url = null;
-        
-        if (canvas) {
-            url = canvas.toDataURL("image/png");
-        } else if (img && img.src) {
-            url = img.src;
-        }
-
-        if (url) {
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'QR-Code_' + Date.now() + '.png';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } else {
-            alert("QR-код еще не отрисовался. Попробуйте через секунду.");
-        }
-    }
-
-    // === 3. СКАНИРОВАНИЕ ===
-    let html5QrCode = null;
-
-    // Инициализация объекта сканера (синглтон)
-    function getScanner() {
-        if (!html5QrCode) {
-            html5QrCode = new Html5Qrcode("reader");
-        }
-        return html5QrCode;
-    }
-
-    function setActiveScanMode(mode) {
-        document.getElementById('cam-btn').classList.remove('active-mode');
-        document.getElementById('file-btn').classList.remove('active-mode');
-        
-        if(mode === 'camera') document.getElementById('cam-btn').classList.add('active-mode');
-        if(mode === 'file') document.getElementById('file-btn').classList.add('active-mode');
-    }
-
-    // Безопасная остановка сканера
-    async function stopScannerSafe() {
-        const scanner = getScanner();
-        try {
-            if (scanner.isScanning) {
-                await scanner.stop();
-            }
-            // Важно: мы не делаем clear(), чтобы не убить DOM элемент #reader полностью
-        } catch (err) {
-            console.log("Scanner stop warning:", err);
-        }
-    }
-
-    async function startCamera() {
-        setActiveScanMode('camera');
-        resetScannerUI(false); 
-        document.getElementById('camera-status').innerText = "Запуск камеры...";
-        
-        const scanner = getScanner();
-
-        try {
-            await stopScannerSafe(); // Сначала убедимся, что все остановлено
-            
-            const config = { 
-                fps: 10, 
-                qrbox: { width: 250, height: 250 }
-                // aspect ratio убрали, чтобы не искажало на мобильных
-            };
-            
-            await scanner.start(
-                { facingMode: "environment" }, 
-                config, 
-                onScanSuccess,
-                (errorMessage) => { 
-                    // Ошибки сканирования кадров игнорируем, это нормально
-                }
-            );
-            
-            document.getElementById('camera-status').innerText = "";
-            
-        } catch (err) {
-            console.error("Ошибка камеры:", err);
-            document.getElementById('camera-status').innerText = "Ошибка доступа к камере";
-            alert("Не удалось запустить камеру. Проверьте разрешения в браузере.");
-            setActiveScanMode(null);
-        }
-    }
-
-    function onScanSuccess(decodedText, decodedResult) {
-        stopScannerSafe(); // Останавливаем камеру
-        
-        const resultDiv = document.getElementById('scan-result');
-        const resultText = document.getElementById('result-text');
-        const openLinkBtn = document.getElementById('open-link-btn');
-        
-        // Прячем видео, показываем результат
-        document.getElementById('reader').style.display = "none"; 
-        resultDiv.style.display = "block";
-        
-        resultText.innerText = decodedText;
-
-        // Проверяем, ссылка ли это
-        const isUrl = /^(http|https):\/\/[^ "]+$/.test(decodedText);
-
-        if (isUrl) {
-            openLinkBtn.style.display = "block";
-            openLinkBtn.href = decodedText;
-            openLinkBtn.target = "_blank";
-        } else {
-            openLinkBtn.style.display = "none";
-        }
-    }
-
-    function resetScannerUI(fullReset = true) {
-        document.getElementById('scan-result').style.display = "none";
-        document.getElementById('reader').style.display = "block";
-        
-        if(fullReset) {
-            document.getElementById('camera-status').innerText = "Выберите способ сканирования";
-            document.getElementById('result-text').innerText = "";
-            setActiveScanMode(null);
-            stopScannerSafe();
-        }
-    }
-
-    function triggerFileSelect() {
-        stopScannerSafe().then(() => {
-            setActiveScanMode('file');
-            resetScannerUI(false); 
-            document.getElementById('camera-status').innerText = "Выбор файла...";
-            
-            const fileInput = document.getElementById('qr-input-file');
-            fileInput.value = ''; // Сбрасываем value, чтобы можно было выбрать тот же файл снова
-            fileInput.click();
-        });
-    }
-
-    function scanFromFile(input) {
-        if (input.files.length === 0) {
-             setActiveScanMode(null);
-             document.getElementById('camera-status').innerText = "Отменено";
-             return;
-        }
-        
-        const imageFile = input.files[0];
-        const scanner = getScanner();
-
-        scanner.scanFile(imageFile, true)
-        .then(decodedText => {
-            onScanSuccess(decodedText);
-            document.getElementById('camera-status').innerText = "";
-        })
-        .catch(err => {
-            alert("QR-код не найден на этом изображении. Попробуйте обрезать картинку.");
-            setActiveScanMode(null);
-            document.getElementById('camera-status').innerText = "QR код не найден";
-        });
-    }
-    
-    function copyResult() {
-        const text = document.getElementById('result-text').innerText;
-        
-        // Надежный метод копирования (работает даже без HTTPS)
-        if (navigator.clipboard && window.isSecureContext) {
-             navigator.clipboard.writeText(text)
-                .then(() => alert("Скопировано! ✅"))
-                .catch(() => fallbackCopy(text));
-        } else {
-            fallbackCopy(text);
-        }
-    }
-    
-    function fallbackCopy(text) {
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "fixed"; // Чтобы не скроллило страницу вниз
-        textArea.style.left = "-9999px";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        
-        try {
-            document.execCommand('copy');
-            alert("Скопировано! ✅");
-        } catch (err) {
-            alert("Не удалось скопировать. Скопируйте вручную.");
-        }
-        
-        document.body.removeChild(textArea);
-    }
+function copyResult() {
+    navigator.clipboard.writeText(resultText.textContent);
+    alert('Скопировано');
+}
 </script>
 
 </body>
 </html>
-
